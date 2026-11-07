@@ -1,0 +1,121 @@
+CSC4320/6320 Project 2 - Week 1 Plan (Day 1 to Day 7 checkpoint)
+=================================================================
+
+GOAL FOR THIS WEEK
+Submit the Day 7 checkpoint in iCollege (worth 3 of the 10 "Design and
+checkpoints" points). Per the assignment (Steps table + Section 8), Day 7 needs:
+
+  [ ] 1. Chosen language (C++20) + exact compiler/runtime version
+  [ ] 2. Assigned seed (use 7 until iCollege gives you yours)
+  [ ] 3. One-page design
+  [ ] 4. List of invariants
+  [ ] 5. Six-event hand trace of queue operations
+  [ ] 6. Smoke-test source + build/run commands + ACTUAL output
+
+Check iCollege first for: the exact Day 7 deadline, the posted course compiler
+environment, and your private seed.
+
+
+DAY-BY-DAY
+----------
+
+DAY 1 - Environment and reading            (~1.5 h)   [mostly DONE]
+  [x] C++20 builds locally (Apple clang 21, `make envtest` passes)
+  [ ] Read the whole PDF once, then re-read Sections 1, 3, 4, 5, 6 carefully
+  [ ] Check iCollege for the course environment; run `make envtest` THERE too.
+      If <semaphore> fails there, the PDF says switch to C/POSIX or Java -
+      decide NOW, since one language is used for the whole project.
+  [ ] Record compiler version for README:  clang++ --version  (and the
+      course environment's version)
+  [ ] `git add` + first commit (Git history is supporting evidence; commit
+      regularly all month, never fake earlier progress)
+
+DAY 2 - Smoke test                           (~1 h)
+  Requirement (Section 10): start two workers, each prints its ID once,
+  join both, THEN main prints a final message.
+  [ ] Write src/SmokeTest.cpp yourself (std::thread, join)
+  [ ] Check return values / catch std::system_error from thread creation
+  [ ] Add a `smoketest` target to the Makefile (copy the envtest pattern)
+  [ ] Run it several times; save real output to
+      evidence/day07/smoke_output.txt   e.g.  make smoketest | tee evidence/day07/smoke_output.txt
+  [ ] Note: worker order may vary between runs - that's allowed; main's
+      message must always be last. Be ready to explain WHY (join).
+
+DAY 3 - Understand the workload by hand      (~1.5 h)
+  [ ] Using the job formula (Section 1), compute payload, units, result for
+      jobs 1..6 with seed=7 on paper. Check that the results add to 3852.
+  [ ] Work out which producer owns which job IDs (producers=2):
+      P0 -> 1,3,5 ; P1 -> 2,4,6   (verify you understand why)
+  [ ] Repeat for your assigned seed's "personal workload" config (Section 7
+      table) once you have the seed - just jobs/producers/consumers/capacity.
+
+DAY 4 - Invariants                           (~1 h)
+  Write them in your own words. Things the PDF expects you to cover:
+  [ ] occupancy bounds (0 <= occupancy <= capacity)
+  [ ] occupancy == number of records actually in the queue (incl. STOP)
+  [ ] FIFO: dequeue order == enqueue order
+  [ ] exactly-once: each real job ENQ once, DEQ once, DONE once
+  [ ] wait predicates: consumer waits while empty, producer while full
+  [ ] STOP rules: one per consumer, only after all real ENQs, consumer exits
+      after STOP_GET
+  [ ] which data the queue mutex protects, and what must stay OUTSIDE it
+      (processing / delay)
+
+DAY 5 - Six-event hand trace                 (~1 h)
+  [ ] Use the public case (seed=7, jobs=6, P=2, C=2, capacity=2, delay=0)
+  [ ] Write 6 rows in the real CSV format:
+        seq,actor,event,job_id,occupancy,result
+      Events: ENQ, DEQ, DONE (STOP_ENQ/STOP_GET later). DONE has the result,
+      everything else uses "-".
+  [ ] Make it legal: occupancy never > 2, DEQ takes the head, DONE comes
+      after that consumer's DEQ, correct result value from Day 3.
+  [ ] Bonus understanding: include one moment where the queue is full and
+      say in a note which thread would block.
+
+DAY 6 - One-page design                      (~2 h)
+  Keep to ONE page. Suggested sections:
+  [ ] Language, compiler, seed
+  [ ] Program structure: modes (race / cv / sem), files you plan
+      (src/, checker/), how config + mode=cv|sem are read
+  [ ] Queue design: data structure (your own bounded FIFO, not a blocking
+      queue library), put/get operations, mutex + not_empty/not_full;
+      semaphore version: empty=capacity, full=0, mutex
+  [ ] Thread lifecycle: start consumers+producers, main joins producers,
+      inserts STOP1..STOPC, joins consumers, then summary
+  [ ] Race experiment idea: how your gates/barrier force both reads first
+  [ ] Trace + checker plan (one paragraph)
+  [ ] Invariants (from Day 4) - can be bulleted or an attached half page
+
+DAY 7 - Package and submit                   (~1 h)
+  [ ] Create evidence/day07/ containing:
+        design.pdf (or .txt)     - design + invariants + hand trace
+        SmokeTest.cpp            - source snapshot
+        smoke_commands.txt       - exact build/run commands
+        smoke_output.txt         - real output, unedited
+  [ ] Update AI_USE.txt (see below)
+  [ ] git commit -m "Day 7 checkpoint"
+  [ ] Upload to iCollege and CONFIRM the submission completed
+      (no late submissions, no extensions)
+
+
+AI_USE.txt - keep it up to date as you go
+-----------------------------------------
+Section 8: AI may help with concepts and debugging only. Record:
+  - Tool: Claude Code
+  - Task: environment setup - diagnosed missing -std=c++20 flag, created
+    Makefile, .vscode config, folder layout, updated Command Line Tools,
+    fixed stale libc++ headers; generated this week-1 plan
+  - Affected files: Makefile, .vscode/*, .gitignore, WEEK1_PLAN.txt,
+    checker/ config/ traces/ evidence/ folders
+  - What you independently tested/changed
+Write the design, invariants, hand trace, and smoke test YOURSELF - those are
+assessed and you must explain them in the demo.
+
+
+LOOKING AHEAD (so week 1 sets you up well)
+------------------------------------------
+  Day 14: race experiment + working CV mode + config parsing + events.csv
+          + first debugging investigation
+  Day 21: semaphore mode + checker + edge cases + second investigation
+  Day 28: final ZIP, 4-6 page report, demo
+  Time budget: 24-32 h total -> this week ~8-9 h is a healthy start.
